@@ -1,6 +1,6 @@
 const txtenc = new TextEncoder();
 const txtdec = new TextDecoder();
-export const encodeQhjar = function(data) {
+export const encodeQhjar = function(data: Uint8Array): string {
   let binary = "";
 
   for (const byte of data) {
@@ -11,22 +11,22 @@ export const encodeQhjar = function(data) {
 
   while (binary.length >= 4) {
     if (binary.length >= 12) {
-      let chunk = binary.slice(0,12);
+      const chunk = binary.slice(0,12);
       binary = binary.slice(12);
       result += String.fromCodePoint(0xE0000 + parseInt(chunk,2));
     } else {
-      let chunk = binary.slice(0,4);
+      const chunk = binary.slice(0,4);
       binary = binary.slice(4);
       result += String.fromCodePoint(0xFE00 + parseInt(chunk,2));
     }
   }
   return result;
 }
-export const decodeQhjar = function(str) {
+export const decodeQhjar = function(str: string): Uint8Array {
   let binary = "";
 
   for (const char of str) {
-    const codepoint = char.codePointAt(0);
+    const codepoint = char.codePointAt(0)??0;
     if (codepoint >= 0xE0000 && codepoint <= 0xE0FFF) {
       const value = codepoint - 0xE0000;
       binary += value.toString(2).padStart(12,"0");
@@ -37,7 +37,7 @@ export const decodeQhjar = function(str) {
     }
   }
 
-  let data = [];
+  const data = [];
 
   while (binary.length >= 8) {
     data.push(parseInt(binary.slice(0,8),2));
@@ -45,5 +45,5 @@ export const decodeQhjar = function(str) {
   }
   return new Uint8Array(data);
 }
-export const encodeQhjarStr = function(str) {return encodeQhjar(txtenc.encode(str))};
-export const decodeQhjarStr = function(str) {return txtdec.decode(decodeQhjar(str))};
+export const encodeQhjarStr = function(str: string): string {return encodeQhjar(txtenc.encode(str))};
+export const decodeQhjarStr = function(str: string): string {return txtdec.decode(decodeQhjar(str))};

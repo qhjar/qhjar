@@ -26,7 +26,7 @@ export const decodeQhjar = function (str: string): Uint8Array {
   let binary = "";
 
   for (const char of str) {
-    const codepoint = char.codePointAt(0) ?? 0;
+    const codepoint = char.codePointAt(0)!;
     if (codepoint >= 0xE0000 && codepoint <= 0xE0FFF) {
       const value = codepoint - 0xE0000;
       binary += value.toString(2).padStart(12, "0");

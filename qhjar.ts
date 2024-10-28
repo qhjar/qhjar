@@ -1,27 +1,51 @@
 const txtenc = new TextEncoder();
 const txtdec = new TextDecoder();
-export const encodeQhjar = function (data: Uint8Array): string {
-  let binary = "";
+const enum State {
+  NewChunk,
+  TwoChunk,
+  OneChunk
+}
 
-  for (const byte of data) {
-    binary += byte.toString(2).padStart(8, "0");
-  }
-
+export const encodeQhjar = function(data: Uint8Array): string {
   let result = "";
-
-  while (binary.length >= 4) {
-    if (binary.length >= 12) {
-      const chunk = binary.slice(0, 12);
-      binary = binary.slice(12);
-      result += String.fromCodePoint(0xE0000 + parseInt(chunk, 2));
-    } else {
-      const chunk = binary.slice(0, 4);
-      binary = binary.slice(4);
-      result += String.fromCodePoint(0xFE00 + parseInt(chunk, 2));
+  let state = State.NewChunk;
+  let chunk = 0;
+  const final = data.at(-1) ?? 0;
+  const length = data.length - 1;
+  for (let i = 0; i < length; i++) {
+    const byte = data[i]
+    switch(state) {
+      case State.NewChunk:
+        chunk = byte << 4;
+        state = State.TwoChunk;
+        break;
+      case State.TwoChunk:
+        result += String.fromCodePoint(0xE0000 + chunk + (byte >> 4))
+        chunk = (byte & 0b1111) << 8;
+        state = State.OneChunk;
+        break;
+      case State.OneChunk:
+        result += String.fromCodePoint(0xE0000 + chunk + byte)
+        state = State.NewChunk;
+        break;
     }
   }
+  switch(state) {
+    case State.NewChunk:
+      result += String.fromCodePoint(0xFE00 + (final >> 4)) + String.fromCodePoint(0xFE00 + (final & 0b1111));
+      break;
+    case State.TwoChunk:
+      result += String.fromCodePoint(0xE0000 + chunk + (final >> 4)) + String.fromCodePoint(0xFE00 + (final & 0b1111))
+      break;
+    case State.OneChunk:
+      result += String.fromCodePoint(0xE0000 + chunk + final)
+      break;
+  }
+
   return result;
-};
+}
+
+
 export const decodeQhjar = function (str: string): Uint8Array {
   let binary = "";
 
@@ -45,6 +69,7 @@ export const decodeQhjar = function (str: string): Uint8Array {
   }
   return new Uint8Array(data);
 };
+
 export const encodeQhjarStr = function (str: string): string {
   return encodeQhjar(txtenc.encode(str));
 };

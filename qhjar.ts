@@ -45,7 +45,7 @@ export const encodeQhjar = function(data: Uint8Array): string {
   return result;
 }
 
-
+// rewrite this
 export const decodeQhjar = function (str: string): Uint8Array {
   let binary = "";
 
